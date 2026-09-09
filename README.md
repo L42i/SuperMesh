@@ -1,4 +1,8 @@
-# SuperMesh Project Structure
+# SuperMesh 
+
+SuperMesh is a distributed camera system for object and motion tracking.
+
+## Project Structure
 
 ```
 SuperMesh/
@@ -24,3 +28,13 @@ SuperMesh/
 ├── run_depth_cameras.yml        # Playbook to launch depth_capture.py on all nodes
 
 ```
+## Contributors
+
+Launched in Spring 2026 by:
+
+- Zephyr Smith: zsmith88@gatech.edu
+- Benjamin Morrissey: bmorrissey9@gatech.edu
+- Mrityunjay Krishnakumar: mkrishnakumar9@gatech.edu
+
+Georgia Institute of Technology
+Atlanta, Georgia, USA
