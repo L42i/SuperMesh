@@ -1,6 +1,6 @@
 # SuperMesh 
 
-SuperMesh is a distributed camera system for object and motion tracking.
+SuperMesh - formally **SüperMësh** - is a distributed camera system for object and motion tracking.
 
 ## Project Structure
 
