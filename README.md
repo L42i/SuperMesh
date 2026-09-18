@@ -2,6 +2,22 @@
 
 SuperMesh - formally **SüperMësh** - is a distributed camera system for object and motion tracking.
 
+## Setup
+
+1) Create a Virtual Environment
+
+### Remote Machine(s)
+
+The remote machine is the user's own laptop.
+These setup steps enable the user to setup the complete cluster of Linux computers using mainly Ansible. 
+
+1) Create A Python Virtual Environment and activate it.
+  - This step is individual for all operating systems.
+2) Install Ansible
+    python3 -m pip install --user ansible
+
+
+
 ## Project Structure
 
 ```
