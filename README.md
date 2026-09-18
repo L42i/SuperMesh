@@ -14,7 +14,7 @@ These setup steps enable the user to setup the complete cluster of Linux compute
 1) Create A Python Virtual Environment and activate it.
   - This step is individual for all operating systems.
 2) Install Ansible
-    python3 -m pip install --user ansible
+    python3 -m pip install ansible
 
 
 
