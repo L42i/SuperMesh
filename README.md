@@ -4,18 +4,27 @@ SuperMesh - formally **SüperMësh** - is a distributed camera system for object
 
 ## Setup
 
-1) Create a Virtual Environment
+### Preparations
 
-### Remote Machine(s)
+When starting from scratch:
+The camera cluster computers need to get a fresh install of the latest Ubuntu Studio, with SSH enabled.
+Each computer needs to get the proper IP address assigned through DHCP.
+The addresses can be found in the bee.ini file.
 
-The remote machine is the user's own laptop.
+### Control Machine(s)
+
+The control machine is the user's own laptop.
 These setup steps enable the user to setup the complete cluster of Linux computers using mainly Ansible. 
 
 1) Create A Python Virtual Environment and activate it.
   - This step is individual for all operating systems.
 2) Install Ansible
+
     python3 -m pip install ansible
 
+To verify Ansible is working and if all machines are connected to the right network properly, run
+
+    ansible all -i config/bees.ini -m ping --ask-pass
 
 
 ## Project Structure
