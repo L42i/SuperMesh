@@ -9,9 +9,9 @@ SuperMesh - formally **SüperMësh** - is a distributed camera system for object
 When starting from scratch:
 The camera cluster computers need to get a fresh install of the latest Ubuntu Studio, with SSH enabled.
 Each computer needs to get the proper IP address assigned through DHCP.
-The addresses can be found in the bee.ini file.
+The addresses can be found in the ``bee.ini`` file.
 
-### Control Machine(s)
+### Control Machine Setup
 
 The control machine is the user's own laptop.
 These setup steps enable the user to setup the complete cluster of Linux computers using mainly Ansible. 
@@ -20,11 +20,42 @@ These setup steps enable the user to setup the complete cluster of Linux compute
   - This step is individual for all operating systems.
 2) Install Ansible
 
+
     python3 -m pip install ansible
 
-To verify Ansible is working and if all machines are connected to the right network properly, run
+3) Test Ansible
+   
+To verify Ansible is working and if all machines are connected to the right network properly, run the builtin ping module:
 
     ansible all -i config/bees.ini -m ping --ask-pass
+
+There will be a lot of output in the terminal - if things are OK, it will contain:
+
+    "ping": "pong"
+
+Now run the playbook:
+
+    ansible-playbook -i config/bees.ini setup/ping.yml --ask-pass    
+
+If everything is OK, it gives:
+
+```
+PLAY RECAP ************************************************************************************************************************************************************************************************************
+10.10.10.19                : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+10.10.10.20                : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+10.10.10.21                : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+10.10.10.22                : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0  
+```
+
+4) Install Cluster Software
+
+*This step needs further documentation.*
+
+
+---
+
+
+
 
 
 ## Project Structure
