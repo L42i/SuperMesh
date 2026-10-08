@@ -4,14 +4,14 @@ SuperMesh — headless_script.py (Node)
 Runs on each Beelink. Two phases:
   1. CALIBRATION  — detects ChArUco board across multiple frames, averages for stability,
                     saves to disk. Does NOT require all 4 nodes to see the board at once.
-  2. TRACKING     — uses YOLOv8n to detect people, converts foot-point to global 3D coords,
+  2. TRACKING     — uses YOLOv26n to detect people, converts foot-point to global 3D coords,
                     sends over OSC to Master.
 
 Dependencies (see install_tracking.yml):
   - opencv-contrib-python >= 4.8
   - pyrealsense2
   - python-osc
-  - ultralytics        (YOLOv8 — installs torch automatically)
+  - ultralytics        (YOLOv26 — installs torch automatically)
   - numpy
 """
 
@@ -52,7 +52,8 @@ else:
 
 OSC_PORT_OUT = 9005   # port Master listens on
 OSC_PORT_IN  = 9003   # port this node listens on
-OSC_ADDRESS  = "/person/" + device_ip
+# OSC_ADDRESS  = "/person/" + device_ip
+OSC_ADDRESS  = "/person" # test case
 
 clients = [udp_client.SimpleUDPClient(master_ip, OSC_PORT_OUT)]
 
@@ -92,9 +93,9 @@ CALIB_FILE = os.path.expanduser("~/supermesh_calib.json")
 # ---------------------------------------------------------------------------
 # YOLO CONFIG
 # ---------------------------------------------------------------------------
-# yolov8n.pt is the fastest nano model (~6MB). Downloads automatically on first run.
-# Swap for yolov8s.pt if you want more accuracy and can spare the CPU.
-YOLO_MODEL = "yolov8n.pt"
+# yolov26n.pt is the new fastest nano model. Downloads automatically on first run.
+# Swap for yolov26s.pt if you want more accuracy and can spare the CPU.
+YOLO_MODEL = "yolo26n.pt"
 YOLO_CONF  = 0.45   # confidence threshold — raise if you get false positives
 PERSON_CLASS = 0    # COCO class 0 = person
 
@@ -330,7 +331,7 @@ try:
 
         # ======================================================================
         # PHASE 2: YOLO PERSON TRACKING
-        # Runs YOLOv8n on the color frame. For each detected person, samples
+        # Runs YOLOv26n on the color frame. For each detected person, samples
         # depth at the foot-point (bottom-center of bbox) for better ground-
         # plane accuracy than the torso center, then converts to global coords.
         # ======================================================================
@@ -374,8 +375,9 @@ try:
                 for client in clients:
                     try:
                         client.send_message( 
-                            OSC_ADDRESS + f"/{person_count}",
-                            [gx, gz, gy, conf]  # includes confidence score
+                            # OSC_ADDRESS + f"/{person_count}",
+                            # [gx, gz, gy, conf]  # includes confidence score
+                            OSC_ADDRESS, [device_ip, person_count, gx,gz,gy,conf] # test case
                         )
                     except BlockingIOError:
                         pass
