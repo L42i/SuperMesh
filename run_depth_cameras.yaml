@@ -1,0 +1,5 @@
+# stop_scripts needs to run first to prevent busy machine issues
+# Run with: ansible-playbook -i config/bees.ini run_depth_cameras.yaml --ask-pass
+
+- import_playbook: setup/stop_scripts.yml
+- import_playbook: run_headless.yaml

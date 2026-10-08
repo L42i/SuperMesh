@@ -1,0 +1,24 @@
+# Runs the charuco_test_remote (for now bc depth_capture isn't finished) script on the 4 beelinks
+# Refer to run_depth_cameras.yaml to run this
+
+- name: Run tracker on beelinks
+  hosts: bees
+  tasks:
+    - name: Copy tracking test script
+      ansible.builtin.copy:
+        # In the future we can replace this script (maybe?)
+        src: concepts/headless_script.py
+        dest: ~/headless_script.py
+
+    - name: Run tracker
+      ansible.builtin.command:
+        cmd: ~/tracking_venv/bin/python ~/headless_script.py
+
+      environment:
+        PYTHONUNBUFFERED: "1"
+
+      register: tracker_output
+
+    - name: Show results
+      ansible.builtin.debug:
+        msg: "{{ tracker_output.stdout_lines }}"

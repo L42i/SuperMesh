@@ -48,11 +48,11 @@ device_ip = get_ip().replace(".", "_")
 if len(sys.argv) > 1:
     master_ip = sys.argv[1]
 else:
-    master_ip = "10.10.10.3"
+    master_ip = "10.10.10.28"
 
-OSC_PORT_OUT = 9001   # port Master listens on
+OSC_PORT_OUT = 9005   # port Master listens on
 OSC_PORT_IN  = 9003   # port this node listens on
-OSC_ADDRESS  = "/person_" + device_ip
+OSC_ADDRESS  = "/person/" + device_ip
 
 clients = [udp_client.SimpleUDPClient(master_ip, OSC_PORT_OUT)]
 
@@ -373,9 +373,9 @@ try:
 
                 for client in clients:
                     try:
-                        client.send_message(
+                        client.send_message( 
                             OSC_ADDRESS + f"/{person_count}",
-                            [gx, gz, gy, conf]   # includes confidence score
+                            [gx, gz, gy, conf]  # includes confidence score
                         )
                     except BlockingIOError:
                         pass
