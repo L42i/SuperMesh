@@ -17,7 +17,7 @@ from collections import deque
 
 # --- CONFIGURATION ---
 RECEIVE_IP   = "0.0.0.0"
-RECEIVE_PORT = 9001
+RECEIVE_PORT = 9001 
 
 ALLOWED_BEE_IPS = ["10_10_10_19", "10_10_10_20", "10_10_10_21", "10_10_10_22"]
 NODE_COLORS = {
@@ -104,7 +104,7 @@ def start_master():
     threading.Thread(target=server.serve_forever, daemon=True).start()
 
     cv2.namedWindow("SuperMesh Enhanced Monitor", cv2.WINDOW_NORMAL)
-    print("Enhanced Master Node Active. Controls: +/- Zoom, Arrows Pan, 'O' Re-center on detected person.")
+    print("Enhanced Master Node Active. Controls: +/-: Zoom, WASD: Pan, 'O': Re-center on detected person, 'C': Calibrate.")
 
     while True:
         current_time = time.time()
@@ -217,7 +217,7 @@ def start_master():
             y_off += 30
 
         cv2.putText(canvas, f"Zoom: {scale:.1f}m | Pan: {offset_x:.1f}, {offset_z:.1f}", (20, MAP_SIZE-50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 100, 100), 1)
-        cv2.putText(canvas, "Arrows=Pan | +/-=Zoom | O=Center | Q=Quit", (20, MAP_SIZE-20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (150, 150, 150), 1)
+        cv2.putText(canvas, "WASD=Pan | +/-=Zoom | O=Center | C=Calibrate | Q=Quit", (20, MAP_SIZE-20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (150, 150, 150), 1)
         
         cv2.imshow("SuperMesh Enhanced Monitor", canvas)
 
@@ -233,14 +233,14 @@ def start_master():
         elif key == ord('='): scale = max(1.0, scale - 0.5) # Zoom in
         elif key == ord('-'): scale += 0.5                  # Zoom out
         elif key == ord('0'): offset_x = offset_z = 0.0; scale = 8.0 # Reset
-        elif key == 81: offset_x += 0.2 # Left arrow
-        elif key == 83: offset_x -= 0.2 # Right arrow
-        elif key == 82: offset_z += 0.2 # Up arrow
-        elif key == 84: offset_z -= 0.2 # Down arrow
+        elif key == ord('a'): offset_x += 0.2 # a
+        elif key == ord('d'): offset_x -= 0.2 # d
+        elif key == ord('w'): offset_z += 0.2 # w
+        elif key == ord('s'): offset_z -= 0.2 # s
         elif key == ord('o') and len(active_people) > 0:
             # Re-center on the first person found
-            offset_x = -active_people[0].x
-            offset_z = -active_people[0].z
+            offset_x = active_people[0].z
+            offset_z = -active_people[0].x
         elif key == ord('c'):
             print("Blasting CALIBRATE...")
             for client in bee_clients: client.send_message("/calibrate", 1)

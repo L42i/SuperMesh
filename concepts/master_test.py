@@ -40,7 +40,7 @@ def person_handler(address, *args): #Runs everytime a tracking message appears f
         else:
             print(f"Maximum number of voices reached, ignoring ID {person_id}")
     else: #If there is already an active ID for the person then we just update the coordinates instead of creating a new id
-        client.send_message("/person", [“person”, person_id, x, z]) #TODO: Change Supercollider script to receive messages starting with this address - done
+        client.send_message("/person", ["person", person_id, x, z]) #TODO: Change Supercollider script to receive messages starting with this address - done
     
 
 def people_handler(address, *args): #This is a function to see who is still in the room
@@ -53,7 +53,7 @@ def people_handler(address, *args): #This is a function to see who is still in t
             del active_voices[person_id]
             print(f"User left space so removing inactive ID {person_id}")
 
-            client.send_message("/person”, [“gone”, person_id]) #Send the update to SuperCollider
+            client.send_message("/person", ["gone", person_id]) #Send the update to SuperCollider
 
 # Don't know how to start the server - put thing into terminal 
 
