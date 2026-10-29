@@ -50,7 +50,7 @@ if len(sys.argv) > 1:
 else:
     master_ip = "10.10.10.94"
 
-OSC_PORT_OUT = 9001   # port Master listens on
+OSC_PORT_OUT = 9005   # port Master listens on
 OSC_PORT_IN  = 9003   # port this node listens on
 OSC_ADDRESS  = "/person/" + device_ip # old convention
 # OSC_ADDRESS  = "/person"
@@ -335,12 +335,25 @@ try:
         # depth at the foot-point (bottom-center of bbox) for better ground-
         # plane accuracy than the torso center, then converts to global coords.
         # ======================================================================
-        results = model(frame, classes=[PERSON_CLASS], conf=YOLO_CONF, verbose=False)
+        # results = model(frame, classes=[PERSON_CLASS], conf=YOLO_CONF, verbose=False)
+        results = model.track(
+            frame,
+            persist=True,
+            tracker="bytetrack.yaml",
+            classes=[PERSON_CLASS],
+            conf=YOLO_CONF,
+            verbose=False
+        )
 
         person_count = 0
         for r in results:
             for i, box in enumerate(r.boxes):
-                person_count += 1
+                if box.id is None:
+                    continue
+
+                person_count = int(box.id.item()) if box.id is not None else None
+
+                
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
                 conf = float(box.conf[0])
 
@@ -362,6 +375,12 @@ try:
 
                 # Use median (more robust to edge noise than mean)
                 depth_m = float(np.median(valid)) * depth_scale
+
+                remote_print(
+                    f"ID: {person_count} | "
+                    f"Depth: {depth_m:.2f}m | "
+                    f"Confidence: {conf:.2f}"
+                )
 
                 # Sanity check — ignore implausible depths
                 if not (0.3 < depth_m < 8.0):

@@ -17,7 +17,7 @@ from collections import deque
 
 # --- CONFIGURATION ---
 RECEIVE_IP   = "0.0.0.0"
-RECEIVE_PORT = 9001 
+RECEIVE_PORT = 9005 
 
 ALLOWED_BEE_IPS = ["10_10_10_19", "10_10_10_20", "10_10_10_21", "10_10_10_22"]
 NODE_COLORS = {

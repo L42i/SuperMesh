@@ -19,6 +19,12 @@ client = udp_client.SimpleUDPClient(SC_IP, SC_PORT)
 # --------------------------------------------------
 # TRACK ACTIVE PEOPLE
 # --------------------------------------------------
+NODE_COLORS = {
+    "10_10_10_19": (0, 0, 255),   # Red
+    "10_10_10_20": (255, 0, 0),   # Blue
+    "10_10_10_21": (0, 255, 0), # Green
+    "10_10_10_22": (255, 0, 255)  # Magenta
+}
 
 # ID -> last time we received that ID
 last_seen = {}
