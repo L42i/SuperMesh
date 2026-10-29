@@ -96,7 +96,7 @@ CALIB_FILE = os.path.expanduser("~/supermesh_calib.json")
 # yolov26n.pt is the new fastest nano model. Downloads automatically on first run.
 # Swap for yolov26s.pt if you want more accuracy and can spare the CPU.
 YOLO_MODEL = "yolo26n.pt"
-YOLO_CONF  = 0.45   # confidence threshold — raise if you get false positives
+YOLO_CONF  = 0.25   # confidence threshold — raise if you get false positives
 PERSON_CLASS = 0    # COCO class 0 = person
 
 # ---------------------------------------------------------------------------
@@ -272,7 +272,7 @@ try:
         # Collects CALIB_FRAMES_NEEDED good detections then averages them.
         # Each node calibrates independently — no need to sync across cameras.
         # ======================================================================
-        if not is_calibrated:
+        if not is_calibrated or force_calibrate:
             charuco_corners, charuco_ids, _, _ = charuco_detector.detectBoard(frame)
 
             board_visible = (charuco_corners is not None and len(charuco_corners) > 3)
@@ -361,7 +361,8 @@ try:
                 # This sits closer to the floor than the torso center,
                 # giving a more accurate ground-plane X/Z position.
                 foot_x = (x1 + x2) // 2
-                foot_y = min(y2, h_img - 1)
+                # foot_y = min(y2, h_img - 1)
+                foot_y = int(y1 + 0.65 * (y2 - y1)) # temporary change
 
                 # Sample a small patch around the foot point for depth stability
                 patch = depth_image[
@@ -375,12 +376,6 @@ try:
 
                 # Use median (more robust to edge noise than mean)
                 depth_m = float(np.median(valid)) * depth_scale
-
-                remote_print(
-                    f"ID: {person_count} | "
-                    f"Depth: {depth_m:.2f}m | "
-                    f"Confidence: {conf:.2f}"
-                )
 
                 # Sanity check — ignore implausible depths
                 if not (0.3 < depth_m < 8.0):
