@@ -22,7 +22,7 @@ s.waitForBoot({
             z = Lag.kr(z, 0.1);
 
             // X controls pitch
-            freq = x.linlin(-1.5, 1.5, 100, 800);
+            freq = x.linlin(-1.5, 1.5, 80, 440);
 
             // Z controls distortion amount
             dist = z.linlin(-1.5, 1.5, 0.1, 20.0);
