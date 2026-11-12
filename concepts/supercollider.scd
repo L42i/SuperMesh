@@ -171,3 +171,19 @@ s.waitForBoot({
 });
 )
 
+
+// Set up local OSC communication
+n = NetAddr("127.0.0.1", NetAddr.langPort);
+
+// Create a person at the center coordinates
+(
+n.sendMsg('/person', 1, 0.0, 0.0);
+n.sendMsg('/people', 1);
+)
+
+// Turn chord ON
+n.sendMsg('/hand', 1, 1);
+
+// Turn chord OFF
+n.sendMsg('/hand', 1, 0);
+
