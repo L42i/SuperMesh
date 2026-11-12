@@ -28,7 +28,7 @@ NODE_COLORS = {
 }
 
 PD_IP   = "127.0.0.1"  # change if Pd is on a different machine
-PD_PORT = 9005
+PD_PORT = 57120
 pd_people_count = 0
 
 pd_client = SimpleUDPClient(PD_IP, PD_PORT)

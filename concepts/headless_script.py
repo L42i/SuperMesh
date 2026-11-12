@@ -95,7 +95,7 @@ CALIB_FILE = os.path.expanduser("~/supermesh_calib.json")
 # ---------------------------------------------------------------------------
 # yolov26n.pt is the new fastest nano model. Downloads automatically on first run.
 # Swap for yolov26s.pt if you want more accuracy and can spare the CPU.
-YOLO_MODEL = "yolo26n.pt"
+YOLO_MODEL = "yolo26n-pose.pt"
 YOLO_CONF  = 0.25   # confidence threshold — raise if you get false positives
 PERSON_CLASS = 0    # COCO class 0 = person
 
