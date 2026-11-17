@@ -28,13 +28,11 @@ s.waitForBoot({
             sig = SinOsc.ar(freq);
             sig = (sig * dist).distort;
 
-            chord = SinOsc.ar(
-                freq * [1, 5/4, 3/2, 2]
-            ).sum * 0.5 * Lag.kr(hand, 0.2);
+            chord = (SinOsc.ar(freq * [0, 4, 7, 12].midiratio) * [1, 0.3, 0.3, 0.15]).sum * Lag.kr(hand, 0.2);
+            sig = (sig * (1 - (0.5 * Lag.kr(hand, 0.2)))) + chord;
 
-            sig = (
-                sig * (1 - (0.8 * Lag.kr(hand, 0.2)))
-            ) + chord;
+            sig = sig * AmpComp.kr(freq, 440, 0.4);
+
 
             // Envelope for smooth creation/removal
             env = EnvGen.kr(
