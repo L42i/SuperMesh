@@ -4,14 +4,14 @@ SuperMesh — headless_script.py (Node)
 Runs on each Beelink. Two phases:
   1. CALIBRATION  — detects ChArUco board across multiple frames, averages for stability,
                     saves to disk. Does NOT require all 4 nodes to see the board at once.
-  2. TRACKING     — uses YOLOv8n to detect people, converts foot-point to global 3D coords,
+  2. TRACKING     — uses YOLOv26n to detect people, converts foot-point to global 3D coords,
                     sends over OSC to Master.
 
 Dependencies (see install_tracking.yml):
   - opencv-contrib-python >= 4.8
   - pyrealsense2
   - python-osc
-  - ultralytics        (YOLOv8 — installs torch automatically)
+  - ultralytics        (YOLOv26 — installs torch automatically)
   - numpy
 """
 
@@ -48,11 +48,12 @@ device_ip = get_ip().replace(".", "_")
 if len(sys.argv) > 1:
     master_ip = sys.argv[1]
 else:
-    master_ip = "10.10.10.28"
+    master_ip = "10.10.10.94"
 
 OSC_PORT_OUT = 9005   # port Master listens on
 OSC_PORT_IN  = 9003   # port this node listens on
-OSC_ADDRESS  = "/person/" + device_ip
+OSC_ADDRESS  = "/person/" + device_ip # old convention
+# OSC_ADDRESS  = "/person"
 
 clients = [udp_client.SimpleUDPClient(master_ip, OSC_PORT_OUT)]
 
@@ -92,10 +93,10 @@ CALIB_FILE = os.path.expanduser("~/supermesh_calib.json")
 # ---------------------------------------------------------------------------
 # YOLO CONFIG
 # ---------------------------------------------------------------------------
-# yolov8n.pt is the fastest nano model (~6MB). Downloads automatically on first run.
-# Swap for yolov8s.pt if you want more accuracy and can spare the CPU.
-YOLO_MODEL = "yolov8n.pt"
-YOLO_CONF  = 0.45   # confidence threshold — raise if you get false positives
+# yolov26n.pt is the new fastest nano model. Downloads automatically on first run.
+# Swap for yolov26s.pt if you want more accuracy and can spare the CPU.
+YOLO_MODEL = "yolo26n-pose.pt"
+YOLO_CONF  = 0.25   # confidence threshold — raise if you get false positives
 PERSON_CLASS = 0    # COCO class 0 = person
 
 # ---------------------------------------------------------------------------
@@ -271,7 +272,7 @@ try:
         # Collects CALIB_FRAMES_NEEDED good detections then averages them.
         # Each node calibrates independently — no need to sync across cameras.
         # ======================================================================
-        if not is_calibrated:
+        if not is_calibrated or force_calibrate:
             charuco_corners, charuco_ids, _, _ = charuco_detector.detectBoard(frame)
 
             board_visible = (charuco_corners is not None and len(charuco_corners) > 3)
@@ -330,16 +331,29 @@ try:
 
         # ======================================================================
         # PHASE 2: YOLO PERSON TRACKING
-        # Runs YOLOv8n on the color frame. For each detected person, samples
+        # Runs YOLOv26n on the color frame. For each detected person, samples
         # depth at the foot-point (bottom-center of bbox) for better ground-
         # plane accuracy than the torso center, then converts to global coords.
         # ======================================================================
-        results = model(frame, classes=[PERSON_CLASS], conf=YOLO_CONF, verbose=False)
+        # results = model(frame, classes=[PERSON_CLASS], conf=YOLO_CONF, verbose=False)
+        results = model.track(
+            frame,
+            persist=True,
+            tracker="bytetrack.yaml",
+            classes=[PERSON_CLASS],
+            conf=YOLO_CONF,
+            verbose=False
+        )
 
         person_count = 0
         for r in results:
             for i, box in enumerate(r.boxes):
-                person_count += 1
+                if box.id is None:
+                    continue
+
+                person_count = int(box.id.item()) if box.id is not None else None
+
+                
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
                 conf = float(box.conf[0])
 
@@ -347,7 +361,8 @@ try:
                 # This sits closer to the floor than the torso center,
                 # giving a more accurate ground-plane X/Z position.
                 foot_x = (x1 + x2) // 2
-                foot_y = min(y2, h_img - 1)
+                # foot_y = min(y2, h_img - 1)
+                foot_y = int(y1 + 0.65 * (y2 - y1)) # temporary change
 
                 # Sample a small patch around the foot point for depth stability
                 patch = depth_image[
@@ -376,6 +391,7 @@ try:
                         client.send_message( 
                             OSC_ADDRESS + f"/{person_count}",
                             [gx, gz, gy, conf]  # includes confidence score
+                            # OSC_ADDRESS, [device_ip, person_count, gx,gz,gy,conf] # old convention
                         )
                     except BlockingIOError:
                         pass
