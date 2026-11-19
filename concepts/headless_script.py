@@ -98,6 +98,9 @@ CALIB_FILE = os.path.expanduser("~/supermesh_calib.json")
 YOLO_MODEL = "yolo26n-pose.pt"
 YOLO_CONF  = 0.25   # confidence threshold — raise if you get false positives
 PERSON_CLASS = 0    # COCO class 0 = person
+POSE_KEYPOINT_CONF = 0.25
+LEFT_SHOULDER, RIGHT_SHOULDER = 5, 6
+LEFT_WRIST, RIGHT_WRIST = 9, 10
 
 # ---------------------------------------------------------------------------
 # OSC COMMAND LISTENERS
@@ -113,6 +116,43 @@ def calibrate_handler(address, *args):
 def quit_handler(address, *args):
     remote_print("[OSC] QUIT command received. Forcing immediate shutdown...")
     os._exit(0)  # Hard kill to prevent pyrealsense2 from deadlocking on exit
+
+
+def hand_raised_states(keypoints_xy, keypoints_conf=None):
+    """Return whether each wrist is above its corresponding shoulder."""
+    states = []
+    for wrist_idx, shoulder_idx in (
+        (LEFT_WRIST, LEFT_SHOULDER),
+        (RIGHT_WRIST, RIGHT_SHOULDER),
+    ):
+        if keypoints_xy.shape[0] <= max(wrist_idx, shoulder_idx):
+            states.append(False)
+            continue
+
+        if (
+            keypoints_conf is not None
+            and (
+                keypoints_conf[wrist_idx] < POSE_KEYPOINT_CONF
+                or keypoints_conf[shoulder_idx] < POSE_KEYPOINT_CONF
+            )
+        ):
+            states.append(False)
+            continue
+
+        states.append(bool(keypoints_xy[wrist_idx, 1] < keypoints_xy[shoulder_idx, 1]))
+
+    return tuple(states)
+
+
+def send_hand_raised(track_id, left_raised, right_raised):
+    """Send per-person left/right raised-hand state to the OSC clients."""
+    address = f"/hand_raised/{device_ip}/{track_id}"
+    for client in clients:
+        try:
+            client.send_message(address, [int(left_raised), int(right_raised)])
+        except BlockingIOError:
+            pass
+
 
 dispatcher = Dispatcher()
 dispatcher.map("/calibrate", calibrate_handler)
@@ -353,7 +393,18 @@ try:
 
                 person_count = int(box.id.item()) if box.id is not None else None
 
-                
+                if r.keypoints is not None and i < len(r.keypoints.xy):
+                    keypoints_xy = r.keypoints.xy[i].cpu().numpy()
+                    keypoints_conf = (
+                        r.keypoints.conf[i].cpu().numpy()
+                        if r.keypoints.conf is not None
+                        else None
+                    )
+                    left_raised, right_raised = hand_raised_states(
+                        keypoints_xy, keypoints_conf
+                    )
+                    send_hand_raised(person_count, left_raised, right_raised)
+
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
                 conf = float(box.conf[0])
 

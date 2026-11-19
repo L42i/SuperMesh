@@ -37,10 +37,12 @@ These OSC messages are sent to the master computer that is running (master_test.
 
 This finalized coordinate can be sent to the synth client through OSC (/person) for processing. Alongside it will also be an OSC message (/people) for how many people are detected.
 
-> address: /person message: float(i), p.x, p.z
+> address: /person message: float(i), p.x, p.z, int(p.left_raised), int(p.right_raised)
 - float(i): Person ID
 - p.x: X coordinate.
 - p.z: Z coordinate.
+- int(p.left_raised): Value of 0 or 1 based on if the person's left arm is raised or not.
+- int(p.right_raised): Value of 0 or 1 based on if the person's right arm is raised or not.
 
 > address: /people message: count
 - count: How many people are detected.
@@ -61,6 +63,4 @@ When prompted, the password to SSH into each node is <u>"henryhenrik" (no quotes
 **PLEASE ensure that the tracking script (headless_script.py) is sending OSC messages to the <u>master computer's IP address and port</u> and that the master script (master_enhanced.py) is sending OSC messages to the <u>receiver's IP address and port</u>.**
 
 The master script (master_enhanced), if run correctly, will display a GUI that allows you to observe the people detected. The features, alongside with their controls, are displayed at the bottom.
-
-
 

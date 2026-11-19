@@ -49,7 +49,8 @@ scale = 8.0     # meters visible
 offset_x = 0.0  # panning
 offset_z = 0.0
 
-raw_camera_points = {} # stores [x, y, z, time, node_ip]
+raw_camera_points = {} # stores [x, y, z, time, node_ip, left_raised, right_raised]
+hand_states = {}       # stores (node_ip, node_track_id): [left, right, time]
 active_people     = []
 next_person_id    = 1
 camera_statuses   = {ip: "Offline" for ip in ALLOWED_BEE_IPS}
@@ -58,15 +59,19 @@ class TrackedPerson:
     def __init__(self, person_id, x, y, z):
         self.id = person_id
         self.x, self.y, self.z = x, y, z
+        self.left_raised = False
+        self.right_raised = False
         self.history = deque(maxlen=MAX_TRAIL_POINTS)
         self.last_seen = time.time()
         self.missed_frames = 0
 
-    def update(self, nx, ny, nz):
+    def update(self, nx, ny, nz, left_raised, right_raised):
         self.history.append((self.x, self.z))
         self.x += SMOOTHING_FACTOR * (nx - self.x)
         self.y += SMOOTHING_FACTOR * (ny - self.y)
         self.z += SMOOTHING_FACTOR * (nz - self.z)
+        self.left_raised = left_raised
+        self.right_raised = right_raised
         self.last_seen = time.time()
         self.missed_frames = 0
 
@@ -76,6 +81,23 @@ def osc_handler(address, *args):
     node_ip = next((ip for ip in ALLOWED_BEE_IPS if ip in address), None)
     if not node_ip: return
 
+    if "hand_raised" in address and len(args) >= 2:
+        try:
+            track_id = int(address.rsplit("/", 1)[1])
+            left_raised = bool(int(args[0]))
+            right_raised = bool(int(args[1]))
+        except (ValueError, TypeError):
+            return
+
+        hand_states[(node_ip, track_id)] = [
+            left_raised, right_raised, time.time()
+        ]
+        point_address = f"/person/{node_ip}/{track_id}"
+        if point_address in raw_camera_points:
+            raw_camera_points[point_address][5] = left_raised
+            raw_camera_points[point_address][6] = right_raised
+        return
+
     if ("person" in address or "blob" in address) and len(args) >= 3:
         x, y, z = args[0], args[1], args[2]
         
@@ -83,7 +105,14 @@ def osc_handler(address, *args):
         if math.isnan(x) or math.isnan(y) or math.isnan(z):
             return  # Silently drop this corrupt packet
             
-        raw_camera_points[address] = [x, y, z, time.time(), node_ip]
+        try:
+            track_id = int(address.rsplit("/", 1)[1])
+        except ValueError:
+            track_id = None
+        state = hand_states.get((node_ip, track_id), [False, False, 0.0])
+        raw_camera_points[address] = [
+            x, y, z, time.time(), node_ip, state[0], state[1]
+        ]
         camera_statuses[node_ip] = "Tracking"
     elif "status" in address and len(args) == 1:
         camera_statuses[node_ip] = args[0]
@@ -128,10 +157,14 @@ def start_master():
                     cluster[2] = (cluster[2] * count + p[2]) / (count + 1)
                     cluster[3].append(p[4]) # nodes contributing
                     cluster[4] += 1        # total points contributing
+                    cluster[5] = cluster[5] or p[5]
+                    cluster[6] = cluster[6] or p[6]
                     matched = True
                     break
             if not matched:
-                clusters.append([p[0], p[1], p[2], [p[4]], 1])
+                clusters.append([
+                    p[0], p[1], p[2], [p[4]], 1, p[5], p[6]
+                ])
 
         # 3. ID Matching (Link clusters to persistent TrackedPerson objects)
         new_active_list = []
@@ -146,11 +179,14 @@ def start_master():
                     best_match, best_dist = person, dist
             
             if best_match:
-                best_match.update(c[0], c[1], c[2])
+                best_match.update(c[0], c[1], c[2], c[5], c[6])
                 new_active_list.append(best_match)
                 active_people.remove(best_match)
             else:
-                new_active_list.append(TrackedPerson(next_person_id, c[0], c[1], c[2]))
+                person = TrackedPerson(next_person_id, c[0], c[1], c[2])
+                person.left_raised = c[5]
+                person.right_raised = c[6]
+                new_active_list.append(person)
                 next_person_id += 1
 
         # Ghosting logic
@@ -168,7 +204,7 @@ def start_master():
             pd_client.send_message("/people", count)
             pd_people_count = count
         for i, p in enumerate(confirmed, start=1):
-            pd_client.send_message("/person", [float(i), p.x, p.z])
+            pd_client.send_message("/person", [float(i), p.x, p.z, int(p.left_raised), int(p.right_raised)])
             
         # --- DRAWING ---
         canvas = np.zeros((MAP_SIZE, MAP_SIZE, 3), dtype=np.uint8)
